@@ -58,6 +58,7 @@ class Normal(nn.Module):
         c = self.normalization.type_as(sample.data)
         inv_sigma = torch.exp(-logsigma)
         tmp = (sample - mu) * inv_sigma
+        # print("tmp:", tmp.shape, ", sample:", sample.shape, ", mu:", mu.shape, "inv_sigma:", inv_sigma.shape, ", logsigma:", logsigma.shape, ", c:", c.shape)
         return -0.5 * (tmp * tmp + 2 * logsigma + c)
 
     def NLL(self, params, sample_params=None):
@@ -228,7 +229,7 @@ class Bernoulli(nn.Module):
 
     def log_density(self, sample, params=None):
         presigm_ps = self._check_inputs(sample.size(), params).type_as(sample)
-        p = (F.sigmoid(presigm_ps) + eps) * (1 - 2 * eps)
+        p = (torch.sigmoid(presigm_ps) + eps) * (1 - 2 * eps)
         logp = sample * torch.log(p + eps) + (1 - sample) * torch.log(1 - p + eps)
         return logp
 

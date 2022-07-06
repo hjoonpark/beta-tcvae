@@ -405,6 +405,7 @@ def main():
     optimizer = optim.Adam(vae.parameters(), lr=args.learning_rate)
 
     # setup visdom for visualization
+    args.visdom = False
     if args.visdom:
         vis = visdom.Visdom(env=args.save, port=4500)
 
@@ -424,7 +425,8 @@ def main():
             anneal_kl(args, vae, iteration)
             optimizer.zero_grad()
             # transfer to GPU
-            x = x.cuda(async=True)
+            # x = x.cuda(async=True)
+            x = x.cuda()
             # wrap the mini-batch in a PyTorch Variable
             x = Variable(x)
             # do ELBO gradient and accumulate loss
@@ -432,7 +434,7 @@ def main():
             if utils.isnan(obj).any():
                 raise ValueError('NaN spotted in objective.')
             obj.mean().mul(-1).backward()
-            elbo_running_mean.update(elbo.mean().data[0])
+            elbo_running_mean.update(elbo.mean().item())
             optimizer.step()
 
             # report training diagnostics

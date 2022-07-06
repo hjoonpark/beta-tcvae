@@ -11,6 +11,7 @@ from metric_helpers.mi_metric import compute_metric_shapes, compute_metric_faces
 
 
 def estimate_entropies(qz_samples, qz_params, q_dist, n_samples=10000, weights=None):
+    print("----- estimate_entropies -----")
     """Computes the term:
         E_{p(x)} E_{q(z|x)} [-log q(z)]
     and
@@ -37,7 +38,9 @@ def estimate_entropies(qz_samples, qz_params, q_dist, n_samples=10000, weights=N
         qz_samples = qz_samples.index_select(1, sample_inds)
 
     K, S = qz_samples.size()
+    print("  qz_samples:", qz_samples.size())
     N, _, nparams = qz_params.size()
+    print("  qz_params:", qz_params.size())
     assert(nparams == q_dist.nparams)
     assert(K == qz_params.size(1))
 
@@ -68,6 +71,7 @@ def estimate_entropies(qz_samples, qz_params, q_dist, n_samples=10000, weights=N
 
 
 def mutual_info_metric_shapes(vae, shapes_dataset):
+    print(">>>>>>>>>> mutual_info_metric_shapes <<<<<<<<<<")
     dataset_loader = DataLoader(shapes_dataset, batch_size=1000, num_workers=1, shuffle=False)
 
     N = len(dataset_loader.dataset)  # number of data samples
@@ -76,7 +80,9 @@ def mutual_info_metric_shapes(vae, shapes_dataset):
     vae.eval()
 
     print('Computing q(z|x) distributions.')
+    print("N:", N, ", K:", K, ", nparams:", nparams)
     qz_params = torch.Tensor(N, K, nparams)
+    print("1 qz_params:", qz_params.shape)
 
     n = 0
     for xs in dataset_loader:
@@ -87,6 +93,8 @@ def mutual_info_metric_shapes(vae, shapes_dataset):
 
     qz_params = Variable(qz_params.view(3, 6, 40, 32, 32, K, nparams).cuda())
     qz_samples = vae.q_dist.sample(params=qz_params)
+    print("2 qz_params:", qz_params.shape)
+    print("qz_samples:", qz_samples.shape)
 
     print('Estimating marginal entropies.')
     # marginal entropies
@@ -96,13 +104,15 @@ def mutual_info_metric_shapes(vae, shapes_dataset):
         vae.q_dist)
 
     marginal_entropies = marginal_entropies.cpu()
+    print("marginal_entropies:", marginal_entropies.shape)
     cond_entropies = torch.zeros(4, K)
+    print("cond_entropies:", cond_entropies.shape)
 
     print('Estimating conditional entropies for scale.')
     for i in range(6):
         qz_samples_scale = qz_samples[:, i, :, :, :, :].contiguous()
         qz_params_scale = qz_params[:, i, :, :, :, :].contiguous()
-
+        print(i, ", qz_samples_scale:", qz_samples_scale.shape, ', qz_params_scale:', qz_params_scale.shape)
         cond_entropies_i = estimate_entropies(
             qz_samples_scale.view(N // 6, K).transpose(0, 1),
             qz_params_scale.view(N // 6, K, nparams),

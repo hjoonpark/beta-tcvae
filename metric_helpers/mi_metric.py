@@ -8,11 +8,18 @@ def MIG(mi_normed):
 
 
 def compute_metric_shapes(marginal_entropies, cond_entropies):
+    print("#### compute_metric_shapes")
+    print("  marginal_entropies:", marginal_entropies.shape, ", cond_entropies:", cond_entropies.shape)
     factor_entropies = [6, 40, 32, 32]
     mutual_infos = marginal_entropies[None] - cond_entropies
+    print("  1 mutual_infos:", mutual_infos.shape)
     mutual_infos = torch.sort(mutual_infos, dim=1, descending=True)[0].clamp(min=0)
+    print("  2 mutual_infos:", mutual_infos.shape)
     mi_normed = mutual_infos / torch.Tensor(factor_entropies).log()[:, None]
+    print("  mi_normed:", mi_normed.shape)
     metric = eval(metric_name)(mi_normed)
+    print("  MIG:", metric.shape)
+
     return metric
 
 
